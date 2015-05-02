@@ -70,26 +70,26 @@
 
 class mercator {
 
-    var $mapWidth;
-    var $mapHeight;
-    var $mapLonLeft;
-    var $mapLatBottom;
-    var $mapLonRight;
-    var $mapLatTop;
-    var $set;
-    var $proj;
-    
-    function __construct ($mapWidth,$mapHeight) 
-    {
-        $this->mapWidth    = $mapWidth; 
-        $this->mapHeight   = $mapHeight; 
-        $this->mapLonLeft  = 1000; 
-        $this->mapLatBottom= 1000; 
-        $this->mapLonRight =-1000; 
-        $this->mapLatTop   =-1000; 
-        $this->set=array(); 
-        $this->proj=array();
-    }
+   var $mapWidth;
+   var $mapHeight;
+   var $mapLonLeft;
+   var $mapLatBottom;
+   var $mapLonRight;
+   var $mapLatTop;
+   var $set;
+   var $proj;
+   
+   function __construct ($mapWidth=1000,$mapHeight=1000) 
+   {
+       $this->mapWidth    = $mapWidth; 
+       $this->mapHeight   = $mapHeight; 
+       $this->mapLonLeft  = 1000; 
+       $this->mapLatBottom= 1000; 
+       $this->mapLonRight =-1000; 
+       $this->mapLatTop   =-1000; 
+       $this->set=array(); 
+       $this->proj=array();
+   }
   
    //function convertPixelToGeo(tx:Number, ty)
    //{
@@ -106,7 +106,19 @@ class mercator {
    //   return new Point($lat,$long);
    //}
 
-    function convert($arr) {
+   function loadfile($filename) {
+      $arr=array();
+      $file = fopen($filename, "r");
+      while (!feof($file))
+      {
+          list($lon,$lat)=explode(",",rtrim(fgets($file)));
+          $arr[]="$lon,$lat"; 
+      }
+      fclose($file);
+      return $arr;
+   }
+   
+   function convert($arr) {
       $set=array();
       foreach ($arr as $key => $arr) {
          list($lon,$lat)=$arr;
@@ -115,7 +127,7 @@ class mercator {
       return $set;
    }
    
-   function filter($arr) {
+   function filter($arr,$param) {
       $x=$y=array();
       foreach ($arr as $key => $arr)
       {
@@ -126,7 +138,7 @@ class mercator {
       $x=array_values($x);
       $y=array_values($y);
       $set=array();
-      for($i=0;$i<count($x);$i+=10)
+      for($i=0;$i<count($x);$i+=$param)
       {
 	 $tx=round($x[$i]);
 	 $ok=0;
@@ -152,42 +164,45 @@ class mercator {
       return $filter;
    }
    
-    function projection($geocoord) 
-    {
-        foreach ($geocoord as $key => $arr) 
-        { 
-            list($lon,$lat) = explode(",",$arr); 
-            $this->mapLonLeft = min($this->mapLonLeft,$lon); 
-            $this->mapLonRight = max($this->mapLonRight,$lon); 
-            $this->mapLatBottom = min( $this->mapLatBottom,$lat); 
-            $this->mapLatTop = max($this->mapLatTop,$lat); 
-            $this->set[]=array($lon,$lat); 
-        } 
+   function project($arr) 
+   {
+      foreach ($arr as $key => $arr2) 
+      { 
+         list($lon,$lat) = explode(",",$arr2); 
+         $this->mapLonLeft = min($this->mapLonLeft,$lon); 
+         $this->mapLonRight = max($this->mapLonRight,$lon); 
+         $this->mapLatBottom = min( $this->mapLatBottom,$lat); 
+         $this->mapLatTop = max($this->mapLatTop,$lat); 
+         $this->set[]=array($lon,$lat); 
+      } 
 
-        $mapLonDelta =  $this->mapLonRight - $this->mapLonLeft; 
-        $mapLatDelta =  $this->mapLatTop - $this->mapLatBottom; 
+      $mapLonDelta =  $this->mapLonRight - $this->mapLonLeft; 
+      $mapLatDelta =  $this->mapLatTop - $this->mapLatBottom; 
 
-        $mapLatTopY= $this->mapLatTop*(M_PI/180); 
-        $worldMapWidth=(($this->mapWidth/$mapLonDelta)*360)/(2*M_PI); 
-        $LatBottomSin=min(max(sin($this->mapLatBottom*(M_PI/180)),-0.9999),0.9999); 
-        $mapOffsetY=$worldMapWidth/2 * log((1+$LatBottomSin)/(1-$LatBottomSin)); 
-        $LatTopSin=min(max(sin($this->mapLatTop*(M_PI/180)),-0.9999),0.9999); 
-        $mapOffsetTopY=$worldMapWidth/2 * log((1+$LatTopSin)/(1-$LatTopSin)); 
-        $mapHeightD=$mapOffsetTopY-$mapOffsetY; 
-        $mapRatioH=$this->mapHeight/$mapHeightD; 
-        $newWidth=$this->mapWidth*($mapHeightD/$this->mapHeight); 
-        $mapRatioW=$this->mapWidth/$newWidth; 
+      $mapLatTopY= $this->mapLatTop*(M_PI/180); 
+      $worldMapWidth=(($this->mapWidth/$mapLonDelta)*360)/(2*M_PI); 
+      $LatBottomSin=min(max(sin($this->mapLatBottom*(M_PI/180)),-0.9999),0.9999); 
+      $mapOffsetY=$worldMapWidth/2 * log((1+$LatBottomSin)/(1-$LatBottomSin)); 
+      $LatTopSin=min(max(sin($this->mapLatTop*(M_PI/180)),-0.9999),0.9999); 
+      $mapOffsetTopY=$worldMapWidth/2 * log((1+$LatTopSin)/(1-$LatTopSin)); 
+      $mapHeightD=$mapOffsetTopY-$mapOffsetY; 
+      $mapRatioH=$this->mapHeight/$mapHeightD; 
+      $newWidth=$this->mapWidth*($mapHeightD/$this->mapHeight); 
+      $mapRatioW=$this->mapWidth/$newWidth; 
+      $this->mapHeight=$mapHeightD;
 
-        foreach ($this->set as $key => $arr) 
-        { 
-            list($lon,$lat) = $arr; 
-            $tx = ($lon - $this->mapLonLeft) * ($newWidth/$mapLonDelta)*$mapRatioW; 
-            $f = sin($lat*M_PI/180); 
-            $ty = ($mapHeightD-(($worldMapWidth/2 * log((1+$f)/(1-$f)))-$mapOffsetY)); 
-            $this->proj[]=array($tx,$ty);
-        }
-        //$this->mapWidth=$newWidth;
-        $this->mapHeight=$mapHeightD;
-    }  
+      foreach ($this->set as $key => $arr2) 
+      { 
+          list($lon,$lat) = $arr2; 
+          $tx = ($lon - $this->mapLonLeft) * ($newWidth/$mapLonDelta)*$mapRatioW; 
+          $f = sin($lat*M_PI/180); 
+          $ty = ($mapHeightD-(($worldMapWidth/2 * log((1+$f)/(1-$f)))-$mapOffsetY)); 
+          $this->proj[]=array($tx,$ty);
+      }
+      
+      $this->set=$this->convert($this->set);    
+      
+      return $this->proj;
+   }
 }
 ?>

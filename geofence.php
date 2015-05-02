@@ -55,15 +55,27 @@ class db
    }
 }
 
-class visualize
+class Image
 {
    var $path;
-   var $pObj;
+   var $stageWidth;
+   var $stageHeight;
+   var $padding;
+   var $delaunay;
+   var $average;
+   var $shape;
+   var $geofence;
    
-   function visualize($path,$pObj)
+   function __construct($path,$pObj)
    {
       $this->path=$path;
-      $this->pObj=$pObj;
+      $this->stageWidth=$pObj->stageWidth;
+      $this->stageHeight=$pObj->stageHeight;
+      $this->padding=20;
+      $this->delaunay=$pObj->delaunay;
+      $this->average=$pObj->average;
+      $this->shape=$pObj->shape;
+      $this->geofence=$pObj->geofence;
    }
    
    function erropen()
@@ -78,7 +90,7 @@ class visualize
       exit;
    }
    
-   function genimage2($set,$stageWidth,$stageHeight)
+   function create2($set,$stageWidth,$stageHeight)
    {
          // Generate the image variables
       $im = imagecreate($stageWidth,$stageHeight);
@@ -122,10 +134,10 @@ class visualize
       fclose($fp);
    }
 
-   function genimage()
+   function create()
    {
          // Generate the image variables
-      $im = imagecreate($this->pObj->stageWidth+200,$this->pObj->stageHeight+200);
+      $im = imagecreate($this->stageWidth+200,$this->stageHeight+200);
       $white = imagecolorallocate ($im,0xff,0xff,0xff);
       $black = imagecolorallocate($im,0x00,0x00,0x00);
       $gray_lite = imagecolorallocate ($im,0xee,0xee,0xee);
@@ -137,62 +149,8 @@ class visualize
       $purple = imagecolorallocate ($im,0x80,0x00,0x80);
       
       // Fill in the background of the image
-      imagefilledrectangle($im, 0, 0, $this->pObj->stageWidth+200, $this->pObj->stageHeight+200, $white);
-      foreach ($this->pObj->delaunay as $key => $arr)
-      {
-	 foreach ($arr as $ikey => $iarr)
-	 {
-	    list($x1,$y1,$x2,$y2) = $iarr;
-	    if (abs($x1) != SUPER_TRIANGLE && abs($y1) != SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
-	    {
-	       //imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$gray_lite);
-	       $ok=0;
-	       //foreach ($this->pObj->shape as $iikey => $iiarr)
-	       //{
-		//  foreach ($iiarr as $iiikey => $iiiarr)
-		//  {
-		//     list($tx1,$ty1,$tx2,$ty2) = $iiiarr; 
-		//     if ($x1==$tx1 && $y1==$ty1 || $x1==$tx2 && $y1==$ty2)
-		//     {
-		//	$ok=1;
-		//     }
-		//  }
-		  list($x,$y)=$iiarr;
-		  if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x1,$y1)) {
-		     $ok=1;
-		  }
-		  if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x2,$y2)) {
-		     $ok=1;
-		  }
-		  foreach ($this->pObj->shape as $iikey => $iiarr)
-		  {
-		     list($x,$y)=$iiarr;
-		     if (array($x,$y)==array($x1,$y1) || array($x,$y)==array($x2,$y2) )
-		     {
-			$ok=1;
-		     }
-		  }
-	       //}
-	       if ($ok==0)
-	       {
-		  imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$gray_lite);
-		  imagefilledellipse($im, $x1, $y1, 4, 4, $blue);
-	       }
-	    }
-	 }   
-      }
-      
-//      foreach ($this->pObj->geofence as $key => $arr)
-//      {
-//	 foreach ($arr as $ikey => $iarr)
-//	 {
-//	 
-//	    list($x1,$y1,$x2,$y2) = $iarr;
-//	    imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$red);
-//	 }
-//      }
-      
-      foreach ($this->pObj->geofence as $key => $arr)
+      imagefilledrectangle($im, 0, 0, $this->stageWidth+200, $this->stageHeight+200, $white);
+      foreach ($this->delaunay as $key => $arr)
       {
 	 foreach ($arr as $ikey => $iarr)
 	 {
@@ -200,24 +158,43 @@ class visualize
 	    $dx = $x2-$x1;
 	    $dy = $y2-$y1;
 	    $d = $dx*$dx+$dy*$dy;
-	    if ($d<$this->pObj->average && abs($x1)!= SUPER_TRIANGLE && abs($y1)!= SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
+	    if ($d<$this->average && abs($x1) != SUPER_TRIANGLE && abs($y1) != SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
 	    {
-	       $ok=1;
-	//       foreach ($this->pObj->shape as $iikey => $iiarr)
-	//       {
-	//	  if ($iiarr==array($x1,$y1))
-	//	  {
-	//	     $ok=1;
-	//	  }
+	       $ok=0;
+	//       if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x1,$y1)) {
+	//	  $ok=1;
 	//       }
-	       if ($ok)
+	//       if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x2,$y2)) {
+	//	  $ok=1;
+	//       }
+	       foreach ($this->shape as $iikey => $iiarr)
 	       {
-		  //list($x,$y)=$iiarr;
-		  //if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x,$y)) {
-		     imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$red); 	
-		  //   break;
-		  //}
+		  list($x,$y)=$iiarr;
+		  if (array($x,$y)==array($x1,$y1) || array($x,$y)==array($x2,$y2) )
+		  {
+		     $ok=1;
+		  }
 	       }
+	       if ($ok==0)
+	       {
+		  imageline($im,$x1+$this->padding,$y1+$this->padding,$x2+$this->padding,$y2+$this->padding,$gray_lite);
+		  imagefilledellipse($im, $x1+$this->padding, $y1+$this->padding, 4, 4, $blue);
+	       }
+	    }
+	 }   
+      }
+      
+      foreach ($this->geofence as $key => $arr)
+      {
+	 foreach ($arr as $ikey => $iarr)
+	 {
+	    list($x1,$y1,$x2,$y2) = $iarr;
+	    $dx = $x2-$x1;
+	    $dy = $y2-$y1;
+	    $d = $dx*$dx+$dy*$dy;
+	    if ($d<$this->average && abs($x1)!= SUPER_TRIANGLE && abs($y1)!= SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
+	    {
+	       imageline($im,$x1+$this->padding,$y1+$this->padding,$x2+$this->padding,$y2+$this->padding,$red); 	       
 	    }
 	 }
       }
