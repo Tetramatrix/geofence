@@ -3,7 +3,7 @@
 /* * *************************************************************
  * Copyright notice
  *
- * (c) 2013 Chi Hoang (info@chihoang.de)
+ * (c) 2013-2015 Chi Hoang (info@chihoang.de)
  *  All rights reserved
  *
  * **************************************************************/
@@ -98,7 +98,7 @@ class visualize
       
       // Fill in the background of the image
       imagefilledrectangle($im, 0, 0, $stageWidth+200, $stageHeight+200, $white);
-			 
+
       foreach ($set as $key => $arr)
       {
 	 list($x1,$y1)=$arr;
@@ -125,7 +125,7 @@ class visualize
    function genimage()
    {
          // Generate the image variables
-      $im = imagecreate($this->pObj->stageWidth,$this->pObj->stageHeight);
+      $im = imagecreate($this->pObj->stageWidth+200,$this->pObj->stageHeight+200);
       $white = imagecolorallocate ($im,0xff,0xff,0xff);
       $black = imagecolorallocate($im,0x00,0x00,0x00);
       $gray_lite = imagecolorallocate ($im,0xee,0xee,0xee);
@@ -147,25 +147,51 @@ class visualize
 	    {
 	       //imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$gray_lite);
 	       $ok=0;
-	       foreach ($this->pObj->convexhull as $iikey => $iiarr)
-	       {
-		  foreach ($iiarr as $iiikey => $iiiarr)
+	       //foreach ($this->pObj->shape as $iikey => $iiarr)
+	       //{
+		//  foreach ($iiarr as $iiikey => $iiiarr)
+		//  {
+		//     list($tx1,$ty1,$tx2,$ty2) = $iiiarr; 
+		//     if ($x1==$tx1 && $y1==$ty1 || $x1==$tx2 && $y1==$ty2)
+		//     {
+		//	$ok=1;
+		//     }
+		//  }
+		  list($x,$y)=$iiarr;
+		  if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x1,$y1)) {
+		     $ok=1;
+		  }
+		  if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x2,$y2)) {
+		     $ok=1;
+		  }
+		  foreach ($this->pObj->shape as $iikey => $iiarr)
 		  {
-		     list($tx1,$ty1,$tx2,$ty2) = $iiiarr; 
-		     if ($x1==$tx1 && $y1==$ty1 || $x1==$tx2 && $y1==$ty2)
+		     list($x,$y)=$iiarr;
+		     if (array($x,$y)==array($x1,$y1) || array($x,$y)==array($x2,$y2) )
 		     {
 			$ok=1;
 		     }
 		  }
-	       }
+	       //}
 	       if ($ok==0)
 	       {
+		  imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$gray_lite);
 		  imagefilledellipse($im, $x1, $y1, 4, 4, $blue);
 	       }
 	    }
 	 }   
       }
-
+      
+//      foreach ($this->pObj->geofence as $key => $arr)
+//      {
+//	 foreach ($arr as $ikey => $iarr)
+//	 {
+//	 
+//	    list($x1,$y1,$x2,$y2) = $iarr;
+//	    imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$red);
+//	 }
+//      }
+      
       foreach ($this->pObj->geofence as $key => $arr)
       {
 	 foreach ($arr as $ikey => $iarr)
@@ -174,33 +200,26 @@ class visualize
 	    $dx = $x2-$x1;
 	    $dy = $y2-$y1;
 	    $d = $dx*$dx+$dy*$dy;
-	    if ($d<$this->pObj->average && abs($x1) != SUPER_TRIANGLE && abs($y1) != SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
+	    if ($d<$this->pObj->average && abs($x1)!= SUPER_TRIANGLE && abs($y1)!= SUPER_TRIANGLE && abs($x2) != SUPER_TRIANGLE && abs($y2) != SUPER_TRIANGLE)
 	    {
-	       $ok=0;
-	       foreach ($this->pObj->pointset as $iikey => $iiarr)
-	       {
-		  if ($iiarr==array($x1,$y1))
-		  {
-		     $ok=1;
-		  }
-	       }
+	       $ok=1;
+	//       foreach ($this->pObj->shape as $iikey => $iiarr)
+	//       {
+	//	  if ($iiarr==array($x1,$y1))
+	//	  {
+	//	     $ok=1;
+	//	  }
+	//       }
 	       if ($ok)
 	       {
-		  imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$red);  
+		  //list($x,$y)=$iiarr;
+		  //if (!$this->pObj->pnpoly(count($this->pObj->nvertx),$this->pObj->nvertx,$this->pObj->nverty,$x,$y)) {
+		     imageline($im,$x1+5,$y1+5,$x2+5,$y2+5,$red); 	
+		  //   break;
+		  //}
 	       }
 	    }
 	 }
-      }
-      
-        //sort($vtree);
-      $temp=array_keys($this->pObj->vf2);
-      $first=array_shift($temp);
-   
-      foreach ($this->pObj->vf2[$first] as $ikey  => $iarr)
-      {
-	 list($x1,$y1) = array(round($iarr[0]->x),round($iarr[0]->y));
-	 list($x2,$y2) = array(round($iarr[1]->x),round($iarr[1]->y));
-	 imageline($im,$x1,$y1,$x2,$y2,$purple);
       }
       
       flush();
@@ -539,8 +558,8 @@ class hull
       }
       return $v;
    }
- 
-   function main($pointset=0,$stageWidth=400,$stageHeight=400,$weight=6.899)
+   
+   function main($pointset=0,$stageWidth=400,$stageHeight=400,$shape=0,$weight=6.899)
    {
       $this->stageWidth = $stageWidth;
       $this->stageHeight = $stageHeight;
@@ -549,7 +568,20 @@ class hull
       $this->indices = array();
       $this->geofence = array();
       $this->weight = $weight;
-      $this->vf2 = array();
+      $this->shape=$shape;
+      
+      $sortX = array();
+      foreach($this->shape as $key => $arr)
+      {
+         $sortX[$key] = $arr[0];
+      } 
+      array_multisort($sortX, SORT_DESC, SORT_NUMERIC, $this->shape);
+      
+      $this->nvertx = $this->nverty = array(); 
+      foreach($this->shape as $key => $arr)
+      {
+	 list($this->nvertx[],$this->nverty[])=$arr;
+      }
       
       if ($pointset==0)
       {         
@@ -587,13 +619,12 @@ class hull
       }
       $this->average=$sum/$c*$this->weight;
       
-            foreach ($this->delaunay as $key => $arr)
+      foreach ($this->delaunay as $key => $arr)
       {       
          $this->cc[$key]=$this->CircumCircle($arr[0][0],$arr[0][1],
                                              $arr[0][2],$arr[0][3],
                                              $arr[1][2],$arr[1][3]);
       }    
-   
    
       foreach ($this->indices as $key => $arr)
       {
@@ -647,57 +678,33 @@ class hull
 		     $this->geofence[$key]=$this->delaunay[$key];
 		  } else
 		  {
+		     
+		//      foreach ($this->indices[$key] as $iiik => $iiia) {
+		//	list($x,$y)=$this->pointset[$iiia];
+		//	if (!$this->pnpoly(count($nvertx),$nvertx,$nverty,$x,$y)) {
+		//	   foreach ($this->dist[$key] as $iikey => $iiarr)
+		//	   {
+		//	      if ($iiarr>$this->average)
+		//	      {				
+		//		 $this->geofence[$key]=$this->delaunay[$key];
+		//		 break;
+		//	      }   
+		//	   }
+		//	}
+		//     }
 		     foreach ($this->dist[$key] as $iikey => $iiarr)
 		     {
 			if ($iiarr>$this->average)
-			{
+			{				
 			   $this->geofence[$key]=$this->delaunay[$key];
 			   break;
-			}
+			}   
 		     }
 		  }
                }
             }
          }
-      }
-      
-      foreach ($this->voronoi as $key=>$arr)
-      {
-	 $tempkey=$key;
-	 $temparr=array();
-	 $temparr[$key]=1;
-	 foreach ($arr as $iikey=>$iiarr)
-	 {
-	    list($px2,$py2)=array(round($iiarr[1]->x),round($iiarr[1]->y));
-	    
-	    for ($i=0;$i<8;$i++)
-	    {
-	       foreach ($this->voronoi as $ikey=>$iarr)
-	       {
-		  if ($ikey != $tempkey && !$temparr[$ikey])
-		  {
-		     foreach ($iarr as $iiikey=>$iiiarr)
-		     {  
-			list($nx2,$ny2)=array(round($iiiarr[1]->x),round($iiiarr[1]->y));
-			
-			if ( $px2==$nx2 && $py2==$ny2 ) 
-			{
-			   $temparr[$ikey]=1;
-			   $tempkey=$ikey;
-			   $px1=$nx1;
-			   $py1=$ny1;
-			   $px2=$nx2;
-			   $py2=$ny2;
-			   
-			   $this->vf2[$key][$ikey]=$iiiarr;
-			   break;
-			}   
-		     }  
-		  }
-	       }   
-	    }
-	 }
-      }
-   }
+      }      
+  }
 }
 ?>

@@ -6,9 +6,8 @@
 *  All rights reserved
 *
 ***************************************************************/
+require_once("mercator.php");
 require_once("geofence.php");
-//require_once("GlobalMapTiles.php");
-define('MAXZOOM', 11);
 
 if( !ini_get('safe_mode') )
 {
@@ -22,84 +21,60 @@ set_time_limit(10000);
 //$pic=new visualize("/tmp/",$hull);
 //$pic->genimage();
 
-// example 1//$hull=new hull();
-//$hull->main(0,1000,1000);
+//example 2
+//$set=array();
+//$tree=array(162, 332,182, 299,141, 292,158, 264,141, 408,160, 400,177, 430,151, 442,155, 425,134, 430,126, 447,139, 466,160, 471,167, 447,182, 466,192, 442,187, 413,173,
+//            403,168, 425,153,413,179, 275,163, 292,134, 270,143, 315,177, 320,163, 311,162, 281,182, 255,141, 226,156, 235,173, 207,187, 230,204, 194,165, 189,145, 201,158,
+//            167,190, 165,206, 145,179, 153,204, 114,221, 138,243, 112,248, 139,177, 122,179, 99,196, 82,219,90,240, 75,218, 61,228, 53,211, 34,197, 51,179, 65,155, 70,165,
+//            85,134, 80,124, 58,153, 44,173, 34,192, 27,156, 19,119, 32,128, 17,138, 36,100, 58,112, 73,100, 92,78, 100,83, 78,61, 63,80, 44,100, 26,60, 39,43, 71,34, 54,32,
+//            90,53, 104,60, 82,66, 99,247, 94,187, 180,221, 168);
+//for ($i=0,$end=count($tree);$i<$end;$i+=2)
+//{
+//    $set[]=array($tree[$i],$tree[$i+1]);    
+//}
+//$hull=new hull();
+//$hull->main($set,600,600,1.5);
 //$pic=new visualize("/tmp/",$hull);
 //$pic->genimage();
-//$file = fopen("star.dat", "r");
-//$set=array();
-//while (!feof($file))
-//{
-//    list($x,$y)=explode(" ",rtrim(fgets($file)));
-//    $set[] = array(round($x),round($y));  
-//}
-//fclose($file);
-//$hull=new hull();
-//$hull->main($set,500,400);
-//$pic=new visualize("/tmp/",$hull);
-//$pic->genimage();2.31"
-//
-
-//example 2
-$set=array();
-$tree=array(162, 332,182, 299,141, 292,158, 264,141, 408,160, 400,177, 430,151, 442,155, 425,134, 430,126, 447,139, 466,160, 471,167, 447,182, 466,192, 442,187, 413,173,
-            403,168, 425,153,413,179, 275,163, 292,134, 270,143, 315,177, 320,163, 311,162, 281,182, 255,141, 226,156, 235,173, 207,187, 230,204, 194,165, 189,145, 201,158,
-            167,190, 165,206, 145,179, 153,204, 114,221, 138,243, 112,248, 139,177, 122,179, 99,196, 82,219,90,240, 75,218, 61,228, 53,211, 34,197, 51,179, 65,155, 70,165,
-            85,134, 80,124, 58,153, 44,173, 34,192, 27,156, 19,119, 32,128, 17,138, 36,100, 58,112, 73,100, 92,78, 100,83, 78,61, 63,80, 44,100, 26,60, 39,43, 71,34, 54,32,
-            90,53, 104,60, 82,66, 99,247, 94,187, 180,221, 168);
-for ($i=0,$end=count($tree);$i<$end;$i+=2)
-{
-    $set[]=array($tree[$i],$tree[$i+1]);    
-}
-$hull=new hull();
-$hull->main($set,600,600,1.5);
-$pic=new visualize("/tmp/",$hull);
-$pic->genimage();
 
 //example 3
-//$mapPadding  = 100;
-//$mapWidth    = 500;
-//$mapHeight   = 500;
-//$mapLonLeft  =1000;
-//$mapLatBottom=1000;
-//$mapLonRight =   0;
-//$mapLatTop   =   0;
-//$set=array();
-//$geocoord = array ("8.6544482.31"7,50.1005233",
-//                   "8.7839489,50.0907496",
-//                   "8.1004734,50.2002273",
-//                   "8.4117232.31"4,50.0951493",
-//                   "8.3508367,49.4765982",
-//                   "9.1828630,48.7827027",
-//                   "9.1686483,48.7686426",
-//                   "9.2118466,48.7829101",
-//                   "8.9670738,48.9456327");
-//
-//foreach ($geocoord as $key => $arr)
-//{
-//    list($lon,$lat) = explode(",",$arr);
-//    $mapLonLeft = min($mapLonLeft,$lon);
-//    $mapLonRight = max($mapLonRight,$lon);
-//    $mapLatBottom = min($mapLatBottom,$lat);
-//    $mapLatTop = max($mapLatTop,$lat);
-//    $set[]=array($lon,$lat);
-//}
-//
-//$mapLonDelta = $mapLonRight-$mapLonLeft;
-//$mapLatDelta = $mapLatTop-$mapLatBottom;
-//2.31"
-//foreach ($set as $key => $arr)
-//{
-//    list($lon,$lat) = $arr;
-//    $x = ($lon - $mapLonLeft) * (($mapWidth-$mapPadding) / $mapLonDelta);
-//    $y = ($mapLatTop - $lat) * (($mapHeight-$mapPadding) / $mapLatDelta);
-//    $set[$key]=array($x,$y);
-//}
-//$hull=new hull();
-//$hull->main($set,$mapHeight,$mapHeight);
-// 
-//$pic=new visualize("/tmp/",$hull);
-//$pic->genimage();
+$mapWidth    = 1000;
+$mapHeight   = 1000;
+
+$shape=array();
+$file = fopen("PAShapeFile.txt", "r");
+while (!feof($file))
+{
+    list($lon,$lat)=explode(",",rtrim(fgets($file)));
+    $shape[]="$lon,$lat"; 
+}
+fclose($file);
+
+$s=new mercator($mapWidth,$mapHeight);
+$res=$s->projection($shape);
+$s->set=array_values($s->set);
+$s->set=$s->convert($s->set);
+$filter=$s->filter($s->proj);
+
+
+$arr=array();
+$file = fopen("PennsylvaniaLonLatT.txt", "r");
+while (!feof($file))
+{
+    list($lon,$lat)=explode(",",rtrim(fgets($file)));
+    $arr[]="$lon,$lat"; 
+}
+fclose($file);
+
+$arr=array_merge($arr,$filter);
+$map=new mercator($mapWidth,$mapHeight);
+$res=$map->projection($arr);
+
+$hull=new hull();
+$hull->main($map->proj,$map->mapWidth,$map->mapHeight,$s->proj,4.9);
+ 
+$pic=new visualize("/tmp/",$hull);
+$pic->genimage();
 
 //132302030011230
 //$conn = new db("localhost", "root", "typo3" );
@@ -236,7 +211,7 @@ $pic->genimage();
 //    $mapLonLeft = min($mapLonLeft,$lon);
 //    $mapLonRight = max($mapLonRight,$lon);
 //    $mapLatBottom = min($mapLatBottom,$lat);
-//    $mapLatTop = max($mapL2.31"atTop,$lat);
+//    $mapLatTop = max($mapLatTop,$lat);
 //    $set[]=array($lon,$lat);
 //}
 
